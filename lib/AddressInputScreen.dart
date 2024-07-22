@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddressInputScreen extends StatefulWidget {
   @override
@@ -14,47 +14,51 @@ class _AddressInputScreenState extends State<AddressInputScreen> {
   final TextEditingController _pincodeController = TextEditingController();
 
   List<Address> _savedAddresses = [];
+  Address? _selectedAddress;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAddresses();
+  }
 
   void _saveAddress() async {
-    String url = 'http://127.0.0.1:8000/api/addresses/'; // Update to correct URL
-    final response = await http.post(Uri.parse(url), body: {
-      'name': _nameController.text,
-      'roadStreet': _roadStreetController.text,
-      'district': _districtController.text,
-      'pincode': _pincodeController.text,
+    final address = Address(
+      name: _nameController.text,
+      roadStreet: _roadStreetController.text,
+      district: _districtController.text,
+      pincode: _pincodeController.text,
+    );
+
+    setState(() {
+      _savedAddresses.add(address);
     });
 
-    if (response.statusCode == 200) {
-      print('Address saved');
-      _clearInputFields();
-      _fetchSavedAddresses();
-    } else {
-      print('Failed to save address');
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('addresses', jsonEncode(_savedAddresses.map((a) => a.toJson()).toList()));
+
+    _clearInputFields();
+  }
+
+  void _loadAddresses() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? addressesString = prefs.getString('addresses');
+
+    if (addressesString != null) {
+      final List<dynamic> addressesJson = jsonDecode(addressesString);
+      setState(() {
+        _savedAddresses = addressesJson.map((json) => Address.fromJson(json)).toList();
+      });
     }
   }
 
-  void _fetchSavedAddresses() async {
-    String url = 'http://127.0.0.1:8000/api/addresses/'; // Update to correct URL
-    final response = await http.get(Uri.parse(url));
+  void _deleteAddress(int index) async {
+    setState(() {
+      _savedAddresses.removeAt(index);
+    });
 
-    if (response.statusCode == 200) {
-      List<Address> addresses = [];
-      final List<dynamic> json = jsonDecode(response.body);
-      json.forEach((address) {
-        addresses.add(Address(
-          name: address['name'],
-          roadStreet: address['roadStreet'],
-          district: address['district'],
-          pincode: address['pincode'],
-        ));
-      });
-
-      setState(() {
-        _savedAddresses = addresses;
-      });
-    } else {
-      print('Failed to fetch addresses');
-    }
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('addresses', jsonEncode(_savedAddresses.map((a) => a.toJson()).toList()));
   }
 
   void _clearInputFields() {
@@ -64,10 +68,12 @@ class _AddressInputScreenState extends State<AddressInputScreen> {
     _pincodeController.clear();
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchSavedAddresses();
+  void _setDefaultAddress() {
+    if (_selectedAddress != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Default address set to: ${_selectedAddress!.name}')),
+      );
+    }
   }
 
   @override
@@ -118,40 +124,57 @@ class _AddressInputScreenState extends State<AddressInputScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
                 ElevatedButton(
-                  onPressed: () {
-                    _saveAddress();
-                  },
+                  onPressed: _saveAddress,
                   child: Text('Save'),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    _clearInputFields();
-                  },
+                  onPressed: _clearInputFields,
                   child: Text('Clear'),
                 ),
               ],
             ),
             SizedBox(height: 16.0),
-            // Display previously saved addresses
             Text(
               'Previously Saved Addresses:',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8.0),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _savedAddresses.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text('Address Name: ${_savedAddresses[index].name}'),
-                    subtitle: Text(
-                      'Road / Street: ${_savedAddresses[index].roadStreet}, '
-                      'District: ${_savedAddresses[index].district}, '
-                      'Pincode: ${_savedAddresses[index].pincode}',
+            _savedAddresses.isNotEmpty
+                ? Expanded(
+                    child: ListView.builder(
+                      itemCount: _savedAddresses.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          title: Text(
+                            '${_savedAddresses[index].name}, '
+                            '${_savedAddresses[index].roadStreet}, '
+                            '${_savedAddresses[index].district}, '
+                            '${_savedAddresses[index].pincode}',
+                          ),
+                          leading: Radio<Address>(
+                            value: _savedAddresses[index],
+                            groupValue: _selectedAddress,
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedAddress = value;
+                              });
+                            },
+                          ),
+                          trailing: IconButton(
+                            icon: Icon(Icons.delete),
+                            onPressed: () {
+                              _deleteAddress(index);
+                            },
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
+                  )
+                : Text('No addresses saved yet.'),
+            SizedBox(height: 16.0),
+            ElevatedButton(
+              onPressed: _setDefaultAddress,
+              child: Text('Set as Default Address'),
             ),
           ],
         ),
@@ -172,4 +195,22 @@ class Address {
     required this.district,
     required this.pincode,
   });
+
+  factory Address.fromJson(Map<String, dynamic> json) {
+    return Address(
+      name: json['name'],
+      roadStreet: json['roadStreet'],
+      district: json['district'],
+      pincode: json['pincode'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'roadStreet': roadStreet,
+      'district': district,
+      'pincode': pincode,
+    };
+  }
 }

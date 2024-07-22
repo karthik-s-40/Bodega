@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'AddressInputScreen.dart'; // Import your AddressInputScreen file
+import 'AddressInputScreen.dart';
+import 'store_items_screen.dart'; // Import your StoreItemsScreen file
+import 'payment.dart'; // Import your PaymentScreen file
+import 'about.dart'; // Import your AboutScreen file
+import 'contact.dart'; // Import your ContactScreen file
 
 void main() {
   runApp(MyApp());
@@ -23,6 +27,10 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => MyHomePage(title: 'Bodega'), // Home route
         '/addresses': (context) => AddressInputScreen(), // Route for Addresses screen
+        '/store-items': (context) => StoreItemsScreen(storeName: ModalRoute.of(context)!.settings.arguments as String), // Route for StoreItemsScreen
+        '/payment': (context) => PaymentScreen(), // Route for PaymentScreen
+        '/about': (context) => AboutScreen(), // Route for AboutScreen
+        '/contact': (context) => ContactScreen(), // Route for ContactScreen
       },
     );
   }
@@ -38,7 +46,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
 
   final List<Store> stores = [
     Store(name: 'Jio Mart', iconPath: 'images/store_a_icon.png'),
@@ -46,12 +53,6 @@ class _MyHomePageState extends State<MyHomePage> {
     Store(name: 'Green Mart', iconPath: 'images/store_c_icon.png'),
     // Add more stores as needed
   ];
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
 
   void _showCurrentLocation() {
     // Add logic to show current location
@@ -117,21 +118,21 @@ class _MyHomePageState extends State<MyHomePage> {
               title: Text('Payment info'),
               onTap: () {
                 Navigator.pop(context); // Close drawer
-                // Navigate to Payment info or handle action
+                Navigator.pushNamed(context, '/payment'); // Navigate to Payment screen
               },
             ),
             ListTile(
-              title: Text('FAQs'),
+              title: Text('About us'),
               onTap: () {
                 Navigator.pop(context); // Close drawer
-                // Navigate to FAQs or handle action
+                Navigator.pushNamed(context, '/about'); // Navigate to About us screen
               },
             ),
             ListTile(
               title: Text('Contact us'),
               onTap: () {
                 Navigator.pop(context); // Close drawer
-                // Navigate to Contact us or handle action
+                Navigator.pushNamed(context, '/contact'); // Navigate to Contact us screen
               },
             ),
           ],
@@ -152,8 +153,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold), // Increase font size
               ),
               onTap: () {
-                // Navigate to store details or handle tap action
-                // Example: Navigator.pushNamed(context, '/store-details', arguments: stores[index]);
+                // Navigate to store items screen
+                Navigator.pushNamed(
+                  context,
+                  '/store-items',
+                  arguments: stores[index].name,
+                );
               },
             ),
           );
