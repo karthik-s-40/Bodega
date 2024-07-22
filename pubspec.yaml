@@ -30,7 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http:
+  http:  ^0.13.3
+  shared_preferences: ^2.0.13
+  url_launcher: ^6.0.20
  
 
 
@@ -65,6 +67,19 @@ flutter:
     - images/store_a_icon.png
     - images/store_b_icon.png
     - images/store_c_icon.png
+    - images/apples.png
+    - images/bananas.png
+  fonts:
+    - family: Pacifico
+      fonts:
+        - asset: fonts/Pacifico.ttf
+    - family: Lobster
+      fonts:
+        - asset: fonts/Lobster.ttf
+    - family: Roboto
+      fonts:
+        - asset: fonts/Roboto.ttf
+
     
 
   # An image asset can refer to one or more resolution-specific "variants", see
