@@ -19,8 +19,8 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Color.fromARGB(255, 247, 247, 246), // White background
         brightness: Brightness.light, // Light theme
         textTheme: TextTheme(
-          bodyText2: TextStyle(color: Colors.black),
-          headline6: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          titleLarge: TextStyle(color: Colors.black),
+          headlineLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
       initialRoute: '/', // Initial route

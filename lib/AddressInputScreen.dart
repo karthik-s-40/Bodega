@@ -1,6 +1,10 @@
+import 'dart:math';
+
+import 'package:bodega/database.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import '';
 
 class AddressInputScreen extends StatefulWidget {
   @override
@@ -15,6 +19,8 @@ class _AddressInputScreenState extends State<AddressInputScreen> {
 
   List<Address> _savedAddresses = [];
   Address? _selectedAddress;
+  var id = 0;
+  var prev_id = 0;
 
   @override
   void initState() {
@@ -24,30 +30,26 @@ class _AddressInputScreenState extends State<AddressInputScreen> {
 
   void _saveAddress() async {
     final address = Address(
+      id: id,
       name: _nameController.text,
       roadStreet: _roadStreetController.text,
       district: _districtController.text,
       pincode: _pincodeController.text,
     );
-
-    setState(() {
-      _savedAddresses.add(address);
-    });
-
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setString('addresses', jsonEncode(_savedAddresses.map((a) => a.toJson()).toList()));
-
+    _selectedAddress = address;
+    final db = AppDatabase();
+    await db.addAddress(address);
     _clearInputFields();
+    id = id + 1;
   }
 
   void _loadAddresses() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? addressesString = prefs.getString('addresses');
+    final db = AppDatabase();
+    final List<Address> addressesList = await db.getAllAddresses();
 
-    if (addressesString != null) {
-      final List<dynamic> addressesJson = jsonDecode(addressesString);
+    if (addressesList.isNotEmpty) {
       setState(() {
-        _savedAddresses = addressesJson.map((json) => Address.fromJson(json)).toList();
+        _savedAddresses = addressesList;
       });
     }
   }
@@ -56,9 +58,8 @@ class _AddressInputScreenState extends State<AddressInputScreen> {
     setState(() {
       _savedAddresses.removeAt(index);
     });
-
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setString('addresses', jsonEncode(_savedAddresses.map((a) => a.toJson()).toList()));
+    final db = AppDatabase();
+    db.deleteAddress(index);
   }
 
   void _clearInputFields() {
@@ -71,7 +72,8 @@ class _AddressInputScreenState extends State<AddressInputScreen> {
   void _setDefaultAddress() {
     if (_selectedAddress != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Default address set to: ${_selectedAddress!.name}')),
+        SnackBar(
+            content: Text('Default address set to: ${_selectedAddress!.name}')),
       );
     }
   }
@@ -180,37 +182,5 @@ class _AddressInputScreenState extends State<AddressInputScreen> {
         ),
       ),
     );
-  }
-}
-
-class Address {
-  final String name;
-  final String roadStreet;
-  final String district;
-  final String pincode;
-
-  Address({
-    required this.name,
-    required this.roadStreet,
-    required this.district,
-    required this.pincode,
-  });
-
-  factory Address.fromJson(Map<String, dynamic> json) {
-    return Address(
-      name: json['name'],
-      roadStreet: json['roadStreet'],
-      district: json['district'],
-      pincode: json['pincode'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'roadStreet': roadStreet,
-      'district': district,
-      'pincode': pincode,
-    };
   }
 }

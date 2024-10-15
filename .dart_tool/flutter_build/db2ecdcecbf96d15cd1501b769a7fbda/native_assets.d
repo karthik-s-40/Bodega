@@ -1,0 +1,1 @@
+ C:\\Users\\acer\\OneDrive\\Desktop\\New\ Folder\\Bodega\\.dart_tool\\flutter_build\\db2ecdcecbf96d15cd1501b769a7fbda\\native_assets.yaml: 
